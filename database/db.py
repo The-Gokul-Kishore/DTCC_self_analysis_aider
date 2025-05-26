@@ -3,7 +3,7 @@ from typing import Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from urllib.parse import quote_plus
-from models import Base
+from database.models import Base
 from threading import Lock
 from contextlib import contextmanager
 
@@ -29,9 +29,9 @@ class DBManager:
         Configure the database engine
         """
         user = os.getenv("DB_USER", "postgres")
-        pwd = quote_plus(os.getenv("DB_PASSWORD", "postgres"))
-        name = os.getenv("DB_NAME", "postgres")
-        host = os.getenv("DB_HOST", "localhost")
+        pwd = quote_plus(os.getenv("DB_PASSWORD", "2005_Gokul"))  # match your Docker password
+        name = os.getenv("DB_NAME", "vectordb")                   # match your Docker DB name
+        host = os.getenv("DB_HOST", "localhost:5435")             # your new port
 
         db_url = f"postgresql+psycopg2://{user}:{pwd}@{host}/{name}"
         self.engine = create_engine(db_url, echo=False, pool_size=10, max_overflow=20)
@@ -66,4 +66,12 @@ class DBManager:
         try:
             yield db
         finally:
+            db.commit()
             db.close()
+if __name__ == "__main__":
+    db_manager = DBManager()
+    db_manager.configure_engine()
+    db_manager.drop_all()  # Optional: drop all tables if needed
+    print("Database engine configured successfully.")
+    db_manager.init_db()
+    print("Database initialized successfully.")

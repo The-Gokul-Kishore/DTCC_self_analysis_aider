@@ -1,9 +1,9 @@
 import fitz  
 from sentence_transformers import SentenceTransformer
-import faiss
+#import faiss
 import numpy as np
-from db import DBManager
-from models import Document
+from database.db import DBManager
+from database.models import Document
 print("Loading PDF...")
 def load_pdf(load_path: str, chunk_size: int = 500) -> list:
     """
@@ -25,7 +25,7 @@ def load_pdf(load_path: str, chunk_size: int = 500) -> list:
     chunks = [full_text[i:i + chunk_size] for i in range(0, len(full_text), chunk_size)]
     return chunks
 
-def parser(load_path: str) -> list:
+def parser(load_path: str,chunk_size:int = 500) -> list:
     """
     Parse a PDF file and return its content as a list of strings.
     Args:
@@ -33,7 +33,7 @@ def parser(load_path: str) -> list:
     
     """
     print("Loading PDF...")
-    chunks = load_pdf(load_path)
+    chunks = load_pdf(load_path,chunk_size=chunk_size)
     model = SentenceTransformer("all-MiniLM-L6-v2")
     print("Encoding PDF...")
     embeddings = model.encode(chunks,show_progress_bar=True)
@@ -47,16 +47,19 @@ def parser(load_path: str) -> list:
     save_to_db(chunks,embeddings,db_manager=DBManager())
 def save_to_db(chunks,embeddings,db_manager: DBManager) -> None:
     with db_manager.session() as session:
+        cnt = 0
         for chunk, embedding in zip(chunks, embeddings):
-            print("saving:",chunk)
+            cnt += 1
+            print("Saving chunk to database...")
             doc = Document(
                 content=chunk,
                 embedding=embedding.tolist()
             )
             session.add(doc)
-        
+        print(f"Total {cnt} chunks saved to database.")
+        print("Committing session to database...")
         session.commit()
 
 if __name__ == "__main__":
     print("Starting PDF parser...")
-    parser("C:/Users/GOKUL/Downloads/annual-report-2023-2024.pdf")
+    parser("C:/Users/GOKUL/Downloads/annual-report-2023-2024.pdf", chunk_size=1000)

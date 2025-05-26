@@ -1,7 +1,7 @@
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from models import Document
-from db import DBManager
+from database.models import Document
+from database.db import DBManager
 
 def cosine_similarity(v1:np.ndarray, v2:np.ndarray) -> float:
     """
@@ -31,15 +31,17 @@ def search_db(query:str,topk:int,db_manager:DBManager) -> list:
         docuemnts = session.query(Document).all()
         
         results = []
-
+        print('docuemnts:', len(docuemnts))
         for chunk in docuemnts:
+            print("Comparing with chunk:", chunk.content[:50])
             similarity = cosine_similarity(query_embedding, chunk.embedding)
-            results.append((chunk, similarity))
+            results.append((chunk.content, similarity))
         results.sort(key=lambda x: x[1], reverse=True)
         return results[:topk]
 if __name__ == "__main__":
     db_manager = DBManager()
-
-    top_chunks = search_db("Explain the architecture of the system.", top_k=3, db_manager=db_manager)
-    for i, (score, text) in enumerate(top_chunks):
-        print(f"\n🔹 Rank {i+1} (score: {score:.4f})\n{text}")
+    print("Configuring database engine...")
+    top_chunks = search_db("Tcs's next year anunnual income projection:", topk=10, db_manager=db_manager)
+    print("Top chunks found:")
+    for i, (doc, score) in enumerate(top_chunks):
+        print(f"\n🔹 Rank {i+1} (score: {score:.4f})\n{doc}")

@@ -8,5 +8,5 @@ class Document(Base):
     __tablename__ = 'documents'
     id = Column(Integer, primary_key=True)
     content = Column(Text, nullable=False)
-    embedding = Column(Vector(1536), nullable=False)
+    embedding = Column(Vector(384), nullable=False)
     
